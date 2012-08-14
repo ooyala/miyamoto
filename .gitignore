@@ -1,0 +1,12 @@
+.DS_Store
+*.dmg
+*.pkg
+*.gz
+*.bz2
+*.tar
+*~
+*.deb
+*.o
+*.pyc
+*.pyo
+config.json
