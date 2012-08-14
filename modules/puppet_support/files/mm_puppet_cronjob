@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Run puppet from cron unless it has been explicitly disabled.
+
+export PATH=$PATH:/usr/local/sbin:/usr/local/bin
+
+# Only works on linux, sadly
+if [ -d /proc ]; then
+  # kill puppet if it's been running for too long (240 min, 4 hours)
+  PUP_PID=`ps -e -o pid,cmd -ww h | grep /usr/sbin/puppetd | grep onetime | grep -v grep | awk '{ print $1 }'`
+  if [ x$PUP_PID != "x" ] ; then
+    PUP_DIR=`find /proc/$PUP_PID -maxdepth 0 -mmin +240`
+    if [ x$PUP_DIR != "x" ] ; then
+      kill $PUP_PID
+      sleep 3
+    fi
+  fi
+fi
+
+if [ -f /etc/knobs/puppet_disable_cron ];then
+  exit 0
+fi
+
+/usr/local/sbin/puppetstarter

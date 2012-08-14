@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# Masterless puppet isn't syncing facts locally. And facter doesn't recurse
+# through FACTERLIB or RUBYLIB, so we get to do this ugly little hack till
+# that gets fixed.
+
+REPO_D=/etc/miyamoto/puppet/current
+FACT_D=/etc/miyamoto/puppet/facter
+
+purge_old_facts() {
+  rm -fr ${FACT_D}/*.rb
+}
+
+clone_facts() {
+  mkdir -p ${FACT_D}
+  for fact in ${REPO_D}/modules/*/lib/facter/*
+  do
+    cp $fact ${FACT_D}
+  done
+}
+
+# don't try to sync if we don't have a valid dir to sync from
+check_for_valid_manifests() {
+  if [ ! -d ${REPO_D} ];then
+    logger -t pinocchio "oo_sync_facts: ${REPO_D} missing"
+    exit 1
+  fi
+}
+
+check_for_valid_manifests
+purge_old_facts
+clone_facts

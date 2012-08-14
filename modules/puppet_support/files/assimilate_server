@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+source /etc/miyamoto/puppet_aws_credentials.sh
+set -e
+
+TEMP_D="/tmp/resistance_is_futile_$$"
+AWS='/usr/local/bin/aws'
+DEFAULT_FLAVOR='puppet_server_stable'
+
+BUCKET_BASE='masterless-puppet.example.com/ubuntu'
+FLAVOR_D="${BUCKET_BASE}/flavors"
+MANIFEST_D="${BUCKET_BASE}/manifests"
+
+load_credentials() {
+  export AWS_ACCESS_KEY_ID="YOUR_AWS_ACCESS_KEY_ID"
+  export AWS_SECRET_ACCESS_KEY="YOUR_AWS_SECRET_ACCESS_KEY"
+}
+
+ensure_running_as_root() {
+  if [ ${UID} != 0 ] ; then exec sudo $0 $*; fi
+  if [ ${UID} != 0 ] ; then echo "Sorry, you have to be root"; exit 1; fi
+}
+
+make_dirs() {
+  mkdir -p /etc/knobs
+  mkdir -p /etc/knob_scripts
+  mkdir -p /etc/ronin/puppet
+}
+
+download_puppet() {
+  mkdir -p ${TEMP_D}
+  echo ${DEFAULT_FLAVOR} > /etc/knobs/puppet_masterless_environment
+  current_version=`${AWS} get ${FLAVOR_D}/${DEFAULT_FLAVOR}`
+  s3_deb_path="${MANIFEST_D}/${DEFAULT_FLAVOR}/${DEFAULT_FLAVOR}-${current_version}.deb"
+  echo "Downloading manifests from s3://${s3_deb_path}"
+  ${AWS} get ${s3_deb_path} ${TEMP_D}/bootstrapper.deb
+  dpkg --install ${TEMP_D}/bootstrapper.deb
+  rm -fr ${TEMP_D}
+  ln -s /etc/ronin/puppet/${DEFAULT_FLAVOR} /etc/ronin/puppet/current
+}
+
+assimilate_server() {
+  cd /etc/miyamoto/puppet/current
+  puppet apply --modulepath=/etc/ronin/puppet/current/modules --verbose nodeless_site.pp
+}
+
+ensure_running_as_root
+load_credentials
+make_dirs
+download_puppet
+assimilate_server

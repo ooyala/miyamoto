@@ -1,0 +1,111 @@
+#!/usr/bin/ruby
+#
+# write a flavor version to a S3 bucket
+#
+# Author: Joe Block <jpb@ooyala.com>
+# Copyright 2012, Ooyala, Inc.
+#
+# This is released under the BSD license.
+
+CONF_D='/etc/ooyala'
+
+require 'rubygems'
+require 'aws/s3'
+require 'json'
+require 'pp'
+require 'syslog'
+require 'trollop'
+
+ENV['FACTERLIB']='/etc/ooyala/puppet/facter'
+
+# Facter takes forever since there are some slow to calculate facts. Minimize
+# runtime by caching the ones we care about for the census.
+$cached_facts = {}
+$debug = 0
+
+# force Puppet distributed facts into the load path
+Puppet.parse_config
+unless $LOAD_PATH.include?(Puppet[:libdir])
+  $LOAD_PATH << Puppet[:libdir]
+end
+
+class RoninFlavor < AWS::S3::S3Object
+    set_current_bucket_to 'masterless-puppet.ooyala.com'
+end
+
+def log_message(msg, threshold = 0)
+  Syslog.notice(msg) if $debug > threshold
+  puts(msg) if $debug > threshold
+end
+
+def load_facts!
+  # squelch standard error
+  # $stderr.reopen('/dev/null', 'w')
+  facts_found = Facter.to_hash
+  if $debug > 10
+    puts "Facter keys:"
+    facts_found.keys.sort.each do |factname|
+      puts "#{factname} => #{facts_found[factname]}"
+    end
+  end
+end
+
+def my_aws_credentials()
+  credentials_f = "#{CONF_D}/puppet_aws_credentials"
+  credentials_f = "scripts/aws_credentials" if $debug > 100
+  log_message("Loading AWS credentials from #{credentials_f}", 20)
+  if File.readable?(credentials_f)
+    key_id = %x[ grep AWS_ACCESS_KEY_ID #{credentials_f} | cut -d'=' -f2].chomp
+    access_key = %x[ grep AWS_SECRET_ACCESS_KEY #{credentials_f} | cut -d'=' -f2].chomp
+    aws_cred = { :access_key_id => key_id, :secret_access_key => access_key }
+  else
+    log_message("Can't read #{credentials_f}!")
+    exit 1
+  end
+  return aws_cred
+end
+
+def connect_to_s3(credentials)
+  AWS::S3::Base.establish_connection!(
+    :access_key_id => credentials[:access_key_id],
+    :secret_access_key => credentials[:secret_access_key]
+  )
+end
+
+def dump_globals
+  puts
+  puts "miyamoto:"
+  puts "branchname: #{$branchname}"
+  puts "debug: #{$debug}"
+  puts "version_label: #{$version_label}"
+  puts
+  puts "AWS credentials:"
+  pp my_aws_credentials
+end
+
+if __FILE__ == $0
+  opts = Trollop::options do
+    version "oo_status_to_s3 0.1"
+    banner <<-EOS
+   Write a status file to S3
+  
+  EOS
+    opt :debug, "debug level", :type => Integer, :default => 0
+    opt :branch_name, "branch name to snapshot", :type => String, :default => ENV['USER']
+    opt :version_label, "version number to label this with", :type => Integer, :default => `date +%Y%m%d%H%M`.chomp.to_i
+  end
+
+  # San check cli args
+  branch_name = opts[:branch_name]
+  $debug = opts[:debug]
+  $version_label = opts[:version_label]
+  Syslog.open(ident='miyamoto')
+  dump_globals if $debug > 0
+  connect_to_s3(my_aws_credentials)
+  flavor = RoninFlavor.find("flavors/#{branch_name}")
+  if $debug > 0
+    puts "flavor:"
+    pp flavor
+  end
+  puts flavor.value.chomp
+end

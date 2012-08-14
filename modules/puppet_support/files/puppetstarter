@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# Copyright 2012, Ooyala.
+# Author: Joseph Block <jpb@ooyala.com>
+#
+# This is released under the BSD license.
+#
+
+export PATH=/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/X11/bin
+
+REVERSED_DOMAIN=com.example.miyamoto
+FLAG_D="/tmp/${REVERSED_DOMAIN}.puppetstarter"
+
+# flagfiles
+DISABLE_PUPPET_RUNS=/tmp/disable_software_management_runs
+DISABLE_REPO_UPDATER=/tmp/disable_puppet_repo_updates
+
+# interesting paths
+REPO_D="/etc/miyamoto/puppet/current"
+PUPPET_MODULE_D="${REPO_D}/modules"
+SITE_PP="${REPO_D}/nodeless_site.pp"
+
+LOG_AS="Miyamoto Musashi"
+
+check_for_disable() {
+    if [ -f ${DISABLE_PUPPET_RUNS} ]; then
+        logger -t "${LOG_AS}" "${DISABLE_PUPPET_RUNS} present, skipping puppet run."
+        exit 0
+    fi
+}
+
+ensure_running_as_root(){
+  if [ ${UID} != 0 ] ; then exec sudo $0 $*; fi
+  if [ ${UID} != 0 ] ; then echo "Sorry, you have to be root"; exit 1; fi
+}
+
+set_lock() {
+    if [ -d ${FLAG_D} ]; then
+        logger -t "${LOG_AS}" "${FLAG_D} present, skipping puppet run."
+        echo "${FLAG_D} present, skipping puppet run."
+        exit 0
+    fi
+    mkdir -p ${FLAG_D}
+    if [ $? -ne 0 ]; then
+      logger -t "${LOG_AS}" "Couldn't mkdir ${FLAG_D}, punting on run."
+      echo "Couldn't mkdir ${FLAG_D}, punting on run."
+    fi
+}
+
+unset_lock() {
+  rm -fr ${FLAG_D}
+  if [ $? -ne 0 ]; then
+    logger -t "${LOG_AS}" "Couldn't unlock ${FLAG_D}"
+    echo "Couldn't unlock ${FLAG_D}"
+  fi
+}
+
+kill_stale_puppet_job() {
+  if [ -d /proc ]; then
+    # This next bit only works on linux, sadly
+    # kill puppet if it's been running for too long (240 min, 4 hours)
+    PUP_PID=`ps -e -o pid,cmd -ww h | grep /usr/sbin/puppetd | grep onetime | grep -v grep | awk '{ print $1 }'`
+    if [ x$PUP_PID != "x" ] ; then
+      PUP_DIR=`find /proc/$PUP_PID -maxdepth 0 -mmin +240`
+      if [ x$PUP_DIR != "x" ] ; then
+        kill -9 $PUP_PID
+        sleep 3
+        unset_lock
+      fi
+    fi
+  fi
+}
+
+update_puppet_repo() {
+  if [ -f ${DISABLE_REPO_UPDATER} ]; then
+    logger -t "${LOG_AS}" "skipping repo update"
+    echo "skipping repo update"
+  else
+    /usr/local/sbin/mm_update_puppet_manifests
+  fi
+}
+
+apply_puppet_environment() {
+  if [ ! -f ${SITE_PP} ];then
+    logger -t "${LOG_AS}" "skipping puppet run, master manifest is missing!"
+    echo
+    echo
+    echo "skipping puppet run, master manifest is missing!"
+    echo
+    echo
+    exit 1
+  fi
+  pushd ${REPO_D}
+  puppet apply --modulepath="${PUPPET_MODULE_D}" --verbose ${SITE_PP} $*
+  popd
+}
+
+main() {
+  check_for_disable
+  ensure_running_as_root
+  kill_stale_puppet_job
+  set_lock
+  update_puppet_repo
+  apply_puppet_environment
+  unset_lock
+}
+
+main

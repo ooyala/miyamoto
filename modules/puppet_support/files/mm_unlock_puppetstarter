@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rm -rf /tmp/disable_software_management_runs /tmp/net.apessekingknowledge.puppetstarter

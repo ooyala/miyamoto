@@ -1,0 +1,143 @@
+#!/usr/bin/ruby
+#
+# Update the puppet repo from a deb stored in s3
+#
+# Copyright 2012 Ooyala, Inc.
+# Author: Joe Block <jpb@ooyala.com>
+#
+# This is released under the Apache license.
+
+require 'rubygems'
+require 'fileutils'
+require 'syslog'
+require 'trollop'
+
+BASE_D='/etc/miyamoto'
+REPO_D="#{BASE_D}/puppet"
+DISABLE_REPO_UPDATER='/tmp/disable_puppet_repo_updates'
+BUCKET_BASE='masterless-puppet.ooyala.com/ubuntu'
+BINARY_D="#{BUCKET_BASE}/binaries"
+STATUS_D="#{BUCKET_BASE}/status"
+FLAVORS_D="#{BUCKET_BASE}/flavors"
+MANIFEST_D="#{BUCKET_BASE}/manifests"
+
+AWS='/usr/local/bin/aws'
+DEFAULT_FLAVOR='puppet_server_stable'
+
+def log_message(msg, threshold = 0)
+  Syslog.notice(msg)
+  puts(msg) if $debug > threshold
+end
+
+def my_environment?
+  log_message("in my_environment?", 100)
+  env_knob = '/etc/knobs/puppet_masterless_environment'
+  if ! File.readable?(env_knob)
+    log_message("Derp! Can't read #{env_knob}, setting to #{DEFAULT_FLAVOR}")
+    %x[echo #{DEFAULT_FLAVOR} > /etc/knobs/puppet_masterless_environment]
+  end
+  return %x[ cat #{env_knob} ].chomp
+end
+
+def installed_environment_flavor?
+  log_message("in installed_environment_flavor?", 100)
+  flavor_f = '/etc/miyamoto/puppet/current/puppet_environment_flavor'
+  if ! File.readable?(flavor_f)
+    log_message("No #{flavor_f}, setting to BAD_FLAVOR")
+    %x[ echo BAD_FLAVOR > #{flavor_f} ]
+  end
+  return %x[ cat #{flavor_f} ].chomp!
+end
+
+def my_environment_version?
+  log_message("in my_environment_version?", 100)
+  env_version_f = '/etc/miyamoto/puppet/current/puppet_environment_version'
+  if ! File.readable?(env_version_f)
+    log_message("No #{env_version_f}, setting to 0")
+    %x[ echo 0 > #{env_version_f} ]
+  end
+  return %x[ cat #{env_version_f} ].chomp!.to_i
+end
+
+def server_environment_version?(environment)
+  log_message("in server_environment_version?", 100)
+  cmd = "#{AWS} get #{FLAVORS_D}/#{environment}"
+  return %x[ #{cmd} ].chomp!.to_i
+end
+
+def check_for_disable?
+  log_message("in check_for_disable?", 100)
+  return File.readable?(DISABLE_REPO_UPDATER)
+end
+
+# masterless puppet doesn't download facts, even with pluginsync true, so we do
+# this ugly hack. There's always something :-(
+
+def synchronize_facts!()
+  log_message("Synchronizing facts", 0)
+  %x[ /usr/local/sbin/mm_sync_facts ]
+end
+
+def dmg_install(dmg_path)
+  log_message("Installing packages from #{dmg_path}")
+  %x[ /usr/local/sbin/install_from_dmg #{dmg_path} ]
+  return
+end
+
+def update_manifests(flavor)
+  log_message("in update_manifests")
+  flavor_version = server_environment_version?(flavor)
+  cache_d = "#{BASE_D}/cache"
+  temp_d = "/tmp/miyamoto_#{$$}"
+  flavor_file = "#{flavor}-#{flavor_version}.deb"
+  deb_path = "#{temp_d}/#{flavor_file}"
+  log_message("deb_path: #{deb_path}")
+  log_message("Downloading manifest package version #{flavor_version} of #{flavor} environment")
+  FileUtils.mkdir_p(cache_d)
+  FileUtils.mkdir_p(temp_d)
+  dl_cmd="#{AWS} get #{MANIFEST_D}/#{flavor}/#{flavor_file} #{deb_path}"
+  %x[ #{dl_cmd} ]
+  %x[ dpkg --install #{deb_path} ]
+  FileUtils.mv deb_path, cache_d
+  FileUtils.rmdir(temp_d)
+end
+
+def main
+  l_flavor = my_environment?
+  l_version = my_environment_version?
+  s_version = server_environment_version?(l_flavor)
+
+  log_message("         local puppet flavor: #{l_flavor}")
+  log_message(" local puppet flavor version: #{l_version}")
+  log_message("server puppet flavor version: #{s_version}")
+
+  if l_version != s_version
+    if check_for_disable? == true
+      log_message("environment updating disabled, exiting")
+      exit 0
+    end
+    log_message("starting environment update")
+    update_manifests(l_flavor)
+  else
+    log_message("local version same as server, skipping update")
+    exit 0
+  end
+end
+
+if __FILE__ == $0
+  Syslog.open(ident='ronin')
+
+  opts = Trollop::options do
+    version "mm_update_puppet_manifests 0.1"
+    banner <<-EOS
+  Update puppet manifests from deb in s3
+
+  EOS
+    opt :debug, "debug level", :type => Integer, :default => 0
+  end
+
+  # San check cli args
+  $debug = opts[:debug]
+
+  main
+end
