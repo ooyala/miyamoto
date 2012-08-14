@@ -1,0 +1,1 @@
+{"bucket":"masterless-puppet.example.com","base_directory":"/etc/miyamoto","status":"osx/status","os_target":"osx","branches":{"stable":"lion_stable","testing":"lion_unstable","working":"master"},"manifests":"osx/manifests","binaries":"osx/binaries","environments":"osx/flavors"}
