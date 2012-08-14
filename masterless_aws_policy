@@ -1,0 +1,57 @@
+{
+ "Statement": [
+   {
+     "Sid": "Stmt1337983139990",
+     "Action": [
+       "s3:CopyObject",
+       "s3:GetBucketAccessControlPolicy",
+       "s3:GetBucketAcl",
+       "s3:GetBucketLocation",
+       "s3:GetBucketLogging",
+       "s3:GetBucketNotification",
+       "s3:GetBucketPolicy",
+       "s3:GetBucketVersioning",
+       "s3:GetObject",
+       "s3:GetObjectExtended",
+       "s3:GetObjectVersion",
+       "s3:ListAllMyBuckets",
+       "s3:ListBucket",
+       "s3:ListBucketMultipartUploads",
+       "s3:ListBucketVersions",
+       "s3:ListMultipartUploadParts"
+     ],
+     "Effect": "Allow",
+     "Resource": "arn:aws:s3:::masterless-puppet.example.com/darwin/*"
+   },
+   {
+     "Sid": "Stmt1337983248507",
+     "Action": [
+       "s3:CopyObject",
+       "s3:DeleteObject",
+       "s3:DeleteObjectVersion",
+       "s3:GetBucketLocation",
+       "s3:GetBucketVersioning",
+       "s3:GetObjectExtended",
+       "s3:GetObjectVersion",
+       "s3:ListAllMyBuckets",
+       "s3:ListBucket",
+       "s3:ListBucketMultipartUploads",
+       "s3:ListBucketVersions",
+       "s3:ListMultipartUploadParts",
+       "s3:PutObject",
+       "s3:PutObjectInline"
+     ],
+     "Effect": "Allow",
+     "Resource": "arn:aws:s3:::masterless-puppet.example.com/darwin/status/*"
+   },
+   {
+     "Sid": "Stmt1337983248508",
+     "Action": [
+       "s3:ListBucket"
+     ],
+     "Effect": "Allow",
+     "Resource": "arn:aws:s3:::masterless-puppet.example.com"
+   }
+
+ ]
+}
