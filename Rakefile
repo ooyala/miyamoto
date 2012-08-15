@@ -98,7 +98,7 @@ def create_deb(flavor)
   FileUtils.chown_R 0, 0, temp_d
   %x[ sudo find #{temp_d} -type d -exec chmod -v 755 '{}' ';' ]
   puts "building deb: #{output_deb} from #{temp_d}"
-  puts %x[ fpm -s dir -t deb -C #{temp_d} -n ooyala_manifests_#{flavor} -p #{output_deb} -v #{VERSION_STAMP} --description "Version #{VERSION_STAMP} of #{flavor}" --vendor Ooyala etc usr root ]
+  puts %x[ fpm -s dir -t deb -C #{temp_d} -n miyamoto_manifests_#{flavor} -p #{output_deb} -v #{VERSION_STAMP} --description "Version #{VERSION_STAMP} of #{flavor}" --vendor Miyamoto etc usr root ]
   FileUtils.rm_rf temp_d
   return output_deb
 end

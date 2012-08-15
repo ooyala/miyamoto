@@ -60,11 +60,17 @@ class puppet_support::engine {
     source  => 'puppet:///modules/puppet_support/assimilate_server',
   }
 
+  file {'/etc/miyamoto':
+    owner => 'root',
+    group => 'root',
+    ensure => directory,
+  }
+
   file { '/etc/miyamoto/puppet_aws_credentials.sh':
     owner => 'root',
     group => 'root',
     mode  => 644,
-    require => [ File['/etc/ooyala'], ],
+    require => [ File['/etc/miyamoto'], ],
     source  => 'puppet:///modules/puppet_support/puppet_aws_credentials.sh',
   }
 

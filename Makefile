@@ -3,20 +3,22 @@
 # License: BSD
 #
 # Create a pkg that installs the current manifests into /etc/ooyala/puppet
+#
+# You must have already installed the luggage (available from
+# https://github.com/unixorn/luggage) for this to work.
 
 include /usr/local/share/luggage/luggage.make
 
 TITLE=${BRANCH}
-#TITLE=foobar
-REVERSE_DOMAIN=com.ooyala.corp
+REVERSE_DOMAIN=com.example.corp
 PUPPET_BASE=modules/puppet_support/files
 MANIFEST_VERSION:=$(shell date +%Y%m%d%H%M)
-MANIFEST_D=${WORK_D}/etc/ooyala/puppet
+MANIFEST_D=${WORK_D}/etc/miyamoto/puppet
 PACKAGE_VERSION=$(shell date +%Y%m%d%H%M)
 PAYLOAD=pack_manifests puppet_environment_version puppet_environment_flavor pack_puppet_engine
 
 manifest_d: l_private_etc
-	@sudo mkdir -p ${WORK_D}/etc/ooyala/puppet
+	@sudo mkdir -p ${MANIFEST_D}
 
 # can't sudo echo > file if the user doesn't have write perms, cope
 puppet_environment_flavor: scratchdir manifest_d

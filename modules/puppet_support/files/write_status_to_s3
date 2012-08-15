@@ -7,7 +7,7 @@
 #
 # This is released under the BSD license.
 
-CONF_D='/etc/ooyala'
+CONF_D='/etc/miyamoto'
 
 require 'rubygems'
 require 'aws/s3'
@@ -16,7 +16,7 @@ require 'pp'
 require 'syslog'
 require 'trollop'
 
-ENV['FACTERLIB']='/etc/ooyala/puppet/facter'
+ENV['FACTERLIB']='/etc/miyamoto/puppet/facter'
 
 # Facter takes forever since there are some slow to calculate facts. Minimize
 # runtime by caching the ones we care about for the census.
@@ -30,7 +30,7 @@ unless $LOAD_PATH.include?(Puppet[:libdir])
 end
 
 class RoninFlavor < AWS::S3::S3Object
-    set_current_bucket_to 'masterless-puppet.ooyala.com'
+    set_current_bucket_to 'masterless-puppet.YOURDOMAINHERE.com'
 end
 
 def log_message(msg, threshold = 0)

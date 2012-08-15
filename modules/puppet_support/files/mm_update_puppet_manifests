@@ -15,7 +15,7 @@ require 'trollop'
 BASE_D='/etc/miyamoto'
 REPO_D="#{BASE_D}/puppet"
 DISABLE_REPO_UPDATER='/tmp/disable_puppet_repo_updates'
-BUCKET_BASE='masterless-puppet.ooyala.com/ubuntu'
+BUCKET_BASE='masterless-puppet.YOURDOMAINHERE.com/ubuntu'
 BINARY_D="#{BUCKET_BASE}/binaries"
 STATUS_D="#{BUCKET_BASE}/status"
 FLAVORS_D="#{BUCKET_BASE}/flavors"
