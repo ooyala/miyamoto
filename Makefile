@@ -87,9 +87,9 @@ pack_oo_update_puppet_manifests: l_usr_local_sbin
 	@sudo chmod 755 ${WORK_D}/usr/local/sbin/oo_update_puppet_manifests
 
 pack_puppet_plist: l_Library_LaunchDaemons
-	@sudo ${CP} ${PUPPET_BASE}/puppetstarter.plist ${WORK_D}/Library/LaunchDaemons/com.ooyala.corp.puppetclient.plist
-	@sudo chown root:admin ${WORK_D}/Library/LaunchDaemons/com.ooyala.corp.puppetclient.plist
-	@sudo chmod 644 ${WORK_D}/Library/LaunchDaemons/com.ooyala.corp.puppetclient.plist
+	@sudo ${CP} ${PUPPET_BASE}/puppetstarter.plist ${WORK_D}/Library/LaunchDaemons/com.example.corp.puppetclient.plist
+	@sudo chown root:admin ${WORK_D}/Library/LaunchDaemons/com.example.corp.puppetclient.plist
+	@sudo chmod 644 ${WORK_D}/Library/LaunchDaemons/com.example.corp.puppetclient.plist
 
 pack_puppetstarter: l_usr_local_sbin
 	@sudo ${CP} ${PUPPET_BASE}/puppetstarter ${WORK_D}/usr/local/sbin
