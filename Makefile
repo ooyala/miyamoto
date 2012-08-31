@@ -20,6 +20,16 @@ PAYLOAD=pack_manifests puppet_environment_version puppet_environment_flavor pack
 manifest_d: l_private_etc
 	@sudo mkdir -p ${MANIFEST_D}
 
+# Switch to pkgbuild since that is shipped on 10.8
+compile_package: payload modify_packageroot
+	@-sudo rm -fr ${PAYLOAD_D}/${PACKAGE_FILE}
+	@echo "Creating ${PAYLOAD_D}/${PACKAGE_FILE} with pkgbuild"
+	@sudo pkgbuild --root ${WORK_D} \
+		--identifier ${PACKAGE_ID} \
+		--ownership preserve \
+		--version ${PACKAGE_VERSION} \
+		--scripts ${SCRIPT_D} \
+		${PAYLOAD_D}/${PACKAGE_FILE}
 # can't sudo echo > file if the user doesn't have write perms, cope
 puppet_environment_flavor: scratchdir manifest_d
 	@sudo touch ${SCRATCH_D}/puppet_environment_flavor
