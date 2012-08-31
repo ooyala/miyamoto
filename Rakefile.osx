@@ -110,18 +110,3 @@ task :clean do
   `find . -name .DS_Store -exec rm -v '{}' ';'`
   `find . -name '.*~' -exec rm -v '{}' ';'`
 end
-# Make setup easy
-
-# desc "setup branches"
-# task :setup_branches do
-#   %x[ git checkout -b puppet_server_stable origin/puppet_server_stable ]
-#   %x[ git checkout -b puppet_server_unstable origin/puppet_server_unstable ]
-# end
-# 
-# desc "Setup commit hook"
-# task :setup_commit_hook do
-#   %x[ cp scripts/pre-commit .git/hooks ]
-# end
-# 
-# desc "Setup fresh git clone"
-# task :setup_fresh_git_clone => [:setup_commit_hook, :setup_branches]
