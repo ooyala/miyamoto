@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# This is released under the BSD license.
+
 source /etc/miyamoto/puppet_aws_credentials.sh
 set -e
 
