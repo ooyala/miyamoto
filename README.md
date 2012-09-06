@@ -31,15 +31,11 @@ of choice. They're in json format so they're easy to parse.
 If you're going to go masterless for both your macs and your servers,
 I recommend that you use different directory trees in S3. I use
 
-bucket/ubuntu/binaries
-bucket/ubuntu/manifests
-bucket/ubuntu/status
+bucket/ubuntu/binaries, bucket/ubuntu/manifests, and bucket/ubuntu/status
 
 for my servers, and
 
-bucket/osx/binaries
-bucket/osx/manifests
-bucket/osx/status
+bucket/osx/binaries, bucket/osx/manifests, and bucket/osx/status
 
 for my OS X machines.
 
