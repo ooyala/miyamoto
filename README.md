@@ -1,28 +1,28 @@
 miyamoto
 ========
 
-# Why bother with masterless?
+# Why bother with masterless Puppet?
 
-We had two different use cases at my work that led to my writing
-Miyamoto. First, we manage our Macintoshes with puppet, and we have
-users in remote locations that don't always need to connect to the
+We had two different use cases at a previous job that led to my writing
+Miyamoto. First, we managed our Macintoshes with puppet, and had
+users in remote locations that didn't always need to connect to the
 VPN. When their machines aren't on the VPN or corp network, they
-can't connect to the puppetmaster and don't receive updates. Miyamoto
-allows them to get their manifests from an S3 bucket, so as long
-as they have internet, they get puppet updates.
+couldn't connect to the puppetmaster and didn't receive updates. This was
+suboptimal. Miyamoto allowed them to get their manifests from an S3 bucket,
+so as long as they had internet, they got their puppet updates.
 
-Secondly, we have some compute-intensive tasks that we do in EC2.
-As the load on the cluster rises and falls, we add and remove
+Secondly, we had some compute-intensive tasks running in EC2.
+As the load on the cluster rises and falls, we added and removed
 instances. Hundreds of thousands of instances over time. Way more
 than I care to have to deal with when cleaning stale certs out of
-the ca certs directory. By using an S3 bucket, we eliminate the
+the ca certs directory. By using an S3 bucket, we eliminated the
 SPOF of a single puppetmaster, or the maintenance hassle of a cluster
 of puppetmasters and ca boxes.
 
 ## But we're losing reporting
 
 Miyamoto writes the facts collected by facter to a status file in
-the S3 bucket, so you still can see what is happening with our fleet
+the S3 bucket, so you still can see what is happening with your fleet
 by scraping those files and loading them into your reporting system
 of choice. They're in json format so they're easy to parse.
 
@@ -41,13 +41,12 @@ for my OS X machines.
 
 ## Security
 
-I use a different AWS user for each architecture tree, and separate
-AWS groups to control the acls for the trees. The machine users
-only have write permission on the status subdirectory of their
+Use a different AWS user for each architecture tree, and separate
+AWS IAM groups to control the acls for the trees. The machine users
+only need write permission on the status subdirectory of their
 architecture subtree, and read-only access to the rest of their
-architecture tree. A compromised machine can't push new manifests
-to its own architecture, and it can't view the manifests or statuses
-of the other architectures.
+architecture tree. A compromised machine can't push new manifests,
+and it can't view the manifests or statuses of the other architectures.
 
 I've included an example AWS policy that enforces this. It assumes
 that you're dedicating an entire AWS bucket to your masterless
@@ -64,12 +63,12 @@ your masterless machines.
 * Dedicated S3 bucket
 
 If you're planning to administer Debian/Ubuntu clients, you'll need
-Jordan Sissel's fpm gem. If you're administering OS X clients,
-you'll need to install my Luggage tool (http://github.com/unixorn/luggage).
+Jordan Sissel's [fpm](https://github.com/jordansissel/fpm) gem. If you're administering OS X clients,
+you'll need to install [the Luggage](http://github.com/unixorn/luggage).
 
-If you're planning to use this with RedHat/Centos, it shouldn't
-take much tweaking to have fpm spit out rpms instead of debs and
-have mm_update_manifests cope accordingly.
+If you're planning to use this with RedHat/Centos, it won't take much
+tweaking to have fpm spit out rpms instead of debs and have mm_update_manifests
+cope accordingly.
 
 ## Fun with Rake
 
